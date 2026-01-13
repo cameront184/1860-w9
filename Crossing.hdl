@@ -1,15 +1,18 @@
-CHIP Crossing {
-    IN PowerOn, Button;
+IN PowerOn, Button;
     OUT ButtonPressed, Wait, X[3], Z[3], C[7];
     
     PARTS:
-    // load signals
-    Or(a=PowerOn, b=false, out=alwaysLoad);
+    //separate load signals for each register
+    Or(a=PowerOn, b=false, out=load1);
+    Or(a=PowerOn, b=false, out=load2);
+    Or(a=PowerOn, b=false, out=load3);
+    Or(a=PowerOn, b=false, out=load4);
+    Or(a=PowerOn, b=false, out=load5);
     
     // Button latch stays high once pressed until crossing completes
     Or(a=Button, b=buttonState, out=buttonOrState);
     And(a=buttonOrState, b=notDone, out=newButtonState);
-    Bit(in=newButtonState, load=alwaysLoad, out=buttonState);
+    Bit(in=newButtonState, load=load1, out=buttonState);
     Or(a=buttonState, b=false, out=ButtonPressed);
     
     // Junction state counter (0 to 7)
@@ -27,7 +30,7 @@ CHIP Crossing {
     // Crossing active state
     Or(a=beginCrossing, b=crossState, out=newCrossState);
     And(a=newCrossState, b=notDone, out=nextCrossState);
-    Bit(in=nextCrossState, load=alwaysLoad, out=crossState);
+    Bit(in=nextCrossState, load=load2, out=crossState);
     
     // Wait signal
     Not(in=crossState, out=Wait);
@@ -43,9 +46,9 @@ CHIP Crossing {
     Mux(a=js1, b=jnext1, sel=Wait, out=jin1);
     Mux(a=js2, b=jnext2, sel=Wait, out=jin2);
     
-    Bit(in=jin0, load=alwaysLoad, out=js0);
-    Bit(in=jin1, load=alwaysLoad, out=js1);
-    Bit(in=jin2, load=alwaysLoad, out=js2);
+    Bit(in=jin0, load=load3, out=js0);
+    Bit(in=jin1, load=load3, out=js1);
+    Bit(in=jin2, load=load3, out=js2);
     
     // Decode junction states
     And(a=notjs0, b=notjs1, out=j0a);
@@ -133,12 +136,13 @@ CHIP Crossing {
     Mux(a=d3, b=true, sel=load9, out=n3);
     
     Or(a=shouldDec, b=beginCrossing, out=updateCounter);
-    And(a=updateCounter, b=alwaysLoad, out=loadC);
+    And(a=updateCounter, b=load4, out=loadC);
+    Or(a=loadC, b=false, out=load5);
     
-    Bit(in=n0, load=loadC, out=c0);
-    Bit(in=n1, load=loadC, out=c1);
-    Bit(in=n2, load=loadC, out=c2);
-    Bit(in=n3, load=loadC, out=c3);
+    Bit(in=n0, load=load5, out=c0);
+    Bit(in=n1, load=load5, out=c1);
+    Bit(in=n2, load=load5, out=c2);
+    Bit(in=n3, load=load5, out=c3);
     
     // 7-segment decoder
     Decoder(in[0]=c0, in[1]=c1, in[2]=c2, in[3]=c3,
